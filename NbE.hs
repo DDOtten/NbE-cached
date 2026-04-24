@@ -8,7 +8,7 @@ In this file we implement a further variation (`nf8` at the end of the file) tha
 This optimisation is based on storing the number of shifts at the root of the cached normal forms: instead of
 storing a ~TmS with lazy weakenings we store a ~Tm and the number of shifts that need to be applied to the normal form.
 
-I believe/hope the computational complexity of `nf8` is the same as `nf7`, since both have to traverse every
+I believe the computational complexity of `nf8` is the same as `nf7`, since both have to traverse every
 cached normal form once per occurrence to apply the needed shifts (which dependend on the number of additional
 binders encountered before substituting), but I have not worked this out in detail yet.
 
@@ -16,7 +16,7 @@ I did compare the output and performance of `nf7` and `nf8` on the original adve
 and they match, with `nf8` being slightly faster on my computer. The main advantage of `nf8` is that it is
 simpler than `nf7` by shifting the work from the `forceShifts` function to reification. This means that we 
 avoiding the need for a version of terms with lazy weakenings, the need for additional datastructures, and return to
-the ussual evaluate/reificate and syntactic/semantic structure of NbE. However, a more detailed analysis of
+the ussual evaluate/reificate and syntactic/semantic structure of NbE. However, a more detailed analasis of
 computational behaviour is needed so please let me know if I made a mistake!
 -}
 
@@ -387,23 +387,38 @@ forceShiftsSpec (AbsS i b) =
 forceShiftsSpec (AppS i f a) =
   shift 0 i (App (forceShiftsSpec f) (forceShiftsSpec a))
 
-instance Shift0 Int where
-  shift0 i j = i + j
+data BindSkip = Root | Skip Int BindSkip | Bind Int BindSkip
 
-forceShifts :: SList Int -> TmS -> Tm
-forceShifts ss (VarS v) = Var (lookupSL ss v)
-forceShifts ss (AbsS i b) =
-  let ss' = Cons 0 (shift0 1 (dropSL i ss))
-  in Abs (forceShifts ss' b)
-forceShifts ss (AppS i f a) =
-  let ss' = dropSL i ss
-  in App (forceShifts ss' f)
-         (forceShifts ss' a)
+skip :: Int -> BindSkip -> BindSkip
+skip 0 bs = bs
+skip i (Skip j bs) = Skip (i + j) bs
+skip i bs = Skip i bs
+
+bind :: Int -> BindSkip -> BindSkip
+bind 0 bs = bs
+bind i (Bind j bs) = Bind (i + j) bs
+bind i bs = Bind i bs
+
+forceShifts :: BindSkip -> TmS -> Tm
+forceShifts bs (AbsS i b) =
+  let bs' = bind 1 (skip i bs)
+  in Abs (forceShifts bs' b)
+forceShifts bs (AppS i f a) =
+  let bs' = skip i bs
+  in App (forceShifts bs' f) (forceShifts bs' a)
+forceShifts bs (VarS v) = Var (doodleJump v bs)
+
+doodleJump :: Int -> BindSkip -> Int
+doodleJump i Root = error "variable out of bounds"
+doodleJump i (Skip j bs) = doodleJump i bs + j
+doodleJump i (Bind j bs)
+  | i < j = i
+  | otherwise = j + doodleJump (i - j) bs
 
 nf7 :: Tm -> Tm
-nf7 t = let n = fv t 
-            ss = foldr (\v rs -> Cons v rs) Nil [0 .. n]
-        in forceShifts ss (reify7 (wnf7 t (reflect7 n)))
+nf7 t = let n = fv t
+            bs = bind (n+1) Root
+         in forceShifts bs (reify7 (wnf7 t (reflect7 n)))
 
 -- `nf7` is much faster on the `nbeAdversarialExploit` program that `nf5` was slow:
 -- >>> fv (nf7 nbeAdversarialExploit)
@@ -411,7 +426,7 @@ nf7 t = let n = fv t
 
 -- nf8 ----------------------------------------------------------------------------------------------------------
 
-{-
+{-}
 This is an alternative implementation (nf8) where instead of storing TmS (terms
 with lazy shift tags) in the cached
 normal forms like nf7, we store a Tm (normal form without lazy shifts) and the
