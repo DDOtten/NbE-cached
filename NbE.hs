@@ -411,7 +411,7 @@ nf7 t = let n = fv t
 
 -- nf8 ----------------------------------------------------------------------------------------------------------
 
-{-}
+{-
 This is an alternative implementation (nf8) where instead of storing TmS (terms
 with lazy shift tags) in the cached
 normal forms like nf7, we store a Tm (normal form without lazy shifts) and the
