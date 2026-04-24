@@ -16,7 +16,7 @@ I did compare the output and performance of `nf7` and `nf8` on the original adve
 and they match, with `nf8` being slightly faster on my computer. The main advantage of `nf8` is that it is
 simpler than `nf7` by shifting the work from the `forceShifts` function to reification. This means that we 
 avoiding the need for a version of terms with lazy weakenings, the need for additional datastructures, and return to
-the ussual evaluate/reificate and syntactic/semantic structure of NbE. However, a more detailed analasis of
+the ussual evaluate/reificate and syntactic/semantic structure of NbE. However, a more detailed analysis of
 computational behaviour is needed so please let me know if I made a mistake!
 -}
 
