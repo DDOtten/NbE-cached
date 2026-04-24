@@ -8,7 +8,7 @@ In this file we implement a further variation (`nf8` at the end of the file) tha
 This optimisation is based on storing the number of shifts at the root of the cached normal forms: instead of
 storing a ~TmS with lazy weakenings we store a ~Tm and the number of shifts that need to be applied to the normal form.
 
-I believe the computational complexity of `nf8` is the same as `nf7`, since both have to traverse every
+I believe/hope the computational complexity of `nf8` is the same as `nf7`, since both have to traverse every
 cached normal form once per occurrence to apply the needed shifts (which dependend on the number of additional
 binders encountered before substituting), but I have not worked this out in detail yet.
 
